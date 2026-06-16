@@ -1,0 +1,27 @@
+docs/SCENARIO-add-test-validate-e2e.md
+  s_dd4b33914b1a43::t_460baed652589d 3
+README.md
+  s_dd4b33914b1a43::t_460baed652589d 1-48
+swing-client/test_trade_flow.py
+  s_dd4b33914b1a43::t_460baed652589d 36
+AGENTS.md
+  s_dd4b33914b1a43::t_460baed652589d 3-13
+docs/SETUP.md
+  s_dd4b33914b1a43::t_460baed652589d 12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "ad4fd8e9489535bc4dbda9c4a24b288558d4f2ca",
+  "prompts": {},
+  "sessions": {
+    "s_dd4b33914b1a43": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "e38964a8-0b28-4a33-9186-9f0a6229e81e",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "dc995 <dc995@hotmail.com>"
+    }
+  }
+}
