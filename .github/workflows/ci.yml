@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# Compile smoke check only.
+# The JAB UI tests and the SQL end-to-end test need a Windows desktop, a running
+# Swing app, and SQL Server — CI can't provide those. Green here means "the Swing
+# client and the Spring Boot backend compile", NOT "the trade-flow tests pass".
+# Run those locally (see docs/SETUP.md).
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Compile Swing client
+        run: javac -d swing-client/out swing-client/SwingTraderApp.java
+
+      - name: Compile backend (main + test sources; tests are not run)
+        run: mvn -B -ntp -f backend/pom.xml test-compile
