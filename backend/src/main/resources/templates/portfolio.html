@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinanApp | Portfolio</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0e17; --bg-secondary: #111827; --bg-card: #1a2235;
+            --border: #2a3548; --text-primary: #e2e8f0; --text-secondary: #94a3b8;
+            --accent-blue: #3b82f6; --accent-green: #10b981; --accent-red: #ef4444;
+            --accent-amber: #f59e0b; --accent-purple: #8b5cf6;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', -apple-system, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+
+        /* Top Bar */
+        .topbar { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 0 32px; height: 56px; display: flex; align-items: center; gap: 24px; }
+        .topbar .logo { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+        .topbar .logo span { color: var(--accent-blue); }
+        .topbar .ticker-strip { display: flex; gap: 24px; margin-left: 32px; font-size: 13px; color: var(--text-secondary); }
+        .topbar .ticker-strip .up { color: var(--accent-green); }
+        .topbar .ticker-strip .down { color: var(--accent-red); }
+        .topbar nav { margin-left: auto; display: flex; gap: 4px; }
+        .topbar nav a { color: var(--text-secondary); text-decoration: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.15s; }
+        .topbar nav a:hover, .topbar nav a.active { color: var(--text-primary); background: var(--bg-card); }
+        .user-badge { display: flex; align-items: center; gap: 10px; margin-right: 20px; padding: 4px 12px 4px 4px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px; }
+        .user-badge .profile-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0; }
+        .user-badge .user-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+        .user-badge .user-role { font-size: 10px; color: var(--text-secondary); }
+        .av-js { background: linear-gradient(135deg, #3b82f6, #8b5cf6); }
+        .av-mw { background: linear-gradient(135deg, #10b981, #06b6d4); }
+
+        /* Layout */
+        .dashboard { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
+
+        /* Summary Cards */
+        .summary-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .summary-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+        .summary-card .label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 6px; }
+        .summary-card .value { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .summary-card .sub { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+        .value-green { color: var(--accent-green); }
+        .value-blue { color: var(--accent-blue); }
+
+        /* Grid */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .grid-2.wide-left { grid-template-columns: 2fr 1fr; }
+
+        /* Cards */
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+        .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .card-header h2 { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .card-body { padding: 20px; }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 10px 16px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); border-bottom: 1px solid var(--border); font-weight: 500; }
+        td { padding: 12px 16px; border-bottom: 1px solid rgba(42,53,72,0.5); font-size: 13px; font-variant-numeric: tabular-nums; }
+        tr:hover td { background: rgba(59,130,246,0.04); }
+        .symbol { font-weight: 700; color: var(--accent-blue); letter-spacing: 0.5px; }
+        .mono { font-family: 'Cascadia Code', 'Fira Code', monospace; }
+        .tag { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; }
+        .tag-buy { background: rgba(16,185,129,0.15); color: var(--accent-green); }
+        .tag-sell { background: rgba(239,68,68,0.15); color: var(--accent-red); }
+        .tag-filled { background: rgba(16,185,129,0.15); color: var(--accent-green); }
+        .tag-pending { background: rgba(245,158,11,0.15); color: #f59e0b; }
+        .tag-canceled { background: rgba(107,114,128,0.15); color: #6b7280; }
+        .text-right { text-align: right; }
+        .text-muted { color: var(--text-secondary); }
+        .filter-btn { background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-secondary); padding: 4px 12px; border-radius: 12px; font-size: 11px; cursor: pointer; font-weight: 600; }
+        .filter-btn.active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
+        .filter-btn:hover:not(.active) { color: var(--text-primary); border-color: var(--text-secondary); }
+        .risk-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+        .risk-stat { text-align: center; padding: 14px; background: var(--bg-primary); border-radius: 8px; }
+        .risk-stat .rv { font-size: 24px; font-weight: 700; }
+        .risk-stat .rl { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+        .sector-bar { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 12px; }
+        .sector-bar .sb-name { width: 130px; color: var(--text-secondary); }
+        .sector-bar .sb-fill { flex: 1; height: 8px; background: var(--bg-primary); border-radius: 4px; overflow: hidden; }
+        .sector-bar .sb-fill-inner { height: 100%; border-radius: 4px; }
+        .sector-bar .sb-pct { width: 45px; text-align: right; font-weight: 600; font-family: 'Cascadia Code', monospace; }
+
+        /* Toast */
+        .toast { background: rgba(16,185,129,0.15); border: 1px solid var(--accent-green); color: var(--accent-green); padding: 12px 20px; border-radius: 8px; margin-bottom: 16px; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+        .toast::before { content: "\2713"; font-weight: 700; }
+
+        /* Empty */
+        .empty { color: var(--text-secondary); text-align: center; padding: 48px 24px; }
+        .empty a { color: var(--accent-blue); text-decoration: none; }
+
+        /* Chart container */
+        .chart-container { position: relative; height: 260px; }
+
+        /* Responsive */
+        @media (max-width: 1024px) { .summary-row { grid-template-columns: repeat(2, 1fr); } .grid-2, .grid-2.wide-left { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="logo">Finan<span>App</span></div>
+        <div class="ticker-strip">
+            <span>S&amp;P 500 <span class="up">5,842.31 +0.62%</span></span>
+            <span>NASDAQ <span class="up">18,439.17 +0.94%</span></span>
+            <span>DOW <span class="down">42,801.72 -0.11%</span></span>
+            <span>10Y <span class="up">4.231%</span></span>
+        </div>
+        <nav>
+            <a href="/portfolio" class="active">Portfolio</a>
+            <a href="/trade">Trade</a>
+            <div class="user-badge">
+                <div th:classappend="${activeProfile == 'JSMITH'} ? 'profile-avatar av-js' : 'profile-avatar av-mw'"
+                     th:text="${activeProfileInitials}"></div>
+                <div>
+                    <div class="user-name" th:text="${activeProfileName}"></div>
+                    <div class="user-role" th:text="${activeProfileStyle}"></div>
+                </div>
+            </div>
+            <a href="/login" style="color: var(--accent-red); opacity: 0.7; font-size: 12px;">Sign Out</a>
+        </nav>
+    </div>
+
+    <div class="dashboard">
+        <div th:if="${message}" class="toast" th:text="${message}"></div>
+
+        <!-- Summary Cards -->
+        <div class="summary-row">
+            <div class="summary-card">
+                <div class="label">Total Market Value</div>
+                <div class="value" id="totalValue">$0.00</div>
+                <div class="sub">across all positions</div>
+            </div>
+            <div class="summary-card">
+                <div class="label">Positions</div>
+                <div class="value value-blue" id="positionCount" th:text="${#lists.size(holdings)}">0</div>
+                <div class="sub">active holdings</div>
+            </div>
+            <div class="summary-card">
+                <div class="label">Total Orders</div>
+                <div class="value" id="orderCount" th:text="${#lists.size(orders)}">0</div>
+                <div class="sub">buy &amp; sell transactions</div>
+            </div>
+            <div class="summary-card">
+                <div class="label">Largest Position</div>
+                <div class="value value-green" id="largestPosition">&#8212;</div>
+                <div class="sub" id="largestSub">by market value</div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-header"><h2>Portfolio Allocation</h2></div>
+                <div class="card-body">
+                    <div th:if="${#lists.isEmpty(holdings)}" class="empty">No positions to chart</div>
+                    <div th:unless="${#lists.isEmpty(holdings)}" class="chart-container">
+                        <canvas id="allocationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h2>Position Size</h2></div>
+                <div class="card-body">
+                    <div th:if="${#lists.isEmpty(holdings)}" class="empty">No positions to chart</div>
+                    <div th:unless="${#lists.isEmpty(holdings)}" class="chart-container">
+                        <canvas id="positionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Holdings Table -->
+        <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+                <h2>Holdings</h2>
+                <a href="/trade" style="color: var(--accent-blue); text-decoration: none; font-size: 13px;">+ New Trade</a>
+            </div>
+            <div th:if="${#lists.isEmpty(holdings)}" class="empty">
+                No positions yet. <a href="/trade">Place your first trade</a>.
+            </div>
+            <table th:unless="${#lists.isEmpty(holdings)}" id="holdingsTable">
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th class="text-right">Shares</th>
+                        <th class="text-right">Avg Cost</th>
+                        <th class="text-right">Mkt Price</th>
+                        <th class="text-right">Mkt Value</th>
+                        <th class="text-right">Cost Basis</th>
+                        <th class="text-right">P&amp;L ($)</th>
+                        <th class="text-right">P&amp;L (%)</th>
+                        <th class="text-right">Weight</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="h : ${holdings}" th:data-symbol="${h.symbol}">
+                        <td class="symbol" th:text="${h.symbol}"></td>
+                        <td class="text-right mono" th:text="${#numbers.formatInteger(h.quantity, 1, 'COMMA')}"></td>
+                        <td class="text-right mono" th:text="'$' + ${#numbers.formatDecimal(h.avgPrice, 1, 2)}"></td>
+                        <td class="text-right mono">—</td>
+                        <td class="text-right mono">—</td>
+                        <td class="text-right mono" th:text="'$' + ${#numbers.formatDecimal(h.avgPrice * h.quantity, 1, 2)}"></td>
+                        <td class="text-right mono pnl-pos">—</td>
+                        <td class="text-right mono pnl-pos">—</td>
+                        <td class="text-right mono">—</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Order Blotter -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Order Blotter</h2>
+                <div style="display:flex;gap:6px;">
+                    <button onclick="filterOrders('ALL')" class="filter-btn active" data-filter="ALL">All</button>
+                    <button onclick="filterOrders('FILLED')" class="filter-btn" data-filter="FILLED">Filled</button>
+                    <button onclick="filterOrders('PENDING')" class="filter-btn" data-filter="PENDING">Pending</button>
+                    <button onclick="filterOrders('CANCELED')" class="filter-btn" data-filter="CANCELED">Canceled</button>
+                </div>
+            </div>
+            <div th:if="${#lists.isEmpty(orders)}" class="empty">No orders placed yet.</div>
+            <table th:unless="${#lists.isEmpty(orders)}" id="blotterTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Status</th>
+                        <th>Side</th>
+                        <th>Symbol</th>
+                        <th class="text-right">Qty</th>
+                        <th class="text-right">Price</th>
+                        <th class="text-right">Notional</th>
+                        <th>Notes</th>
+                        <th class="text-right">Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="o : ${orders}" th:data-status="${o.status}">
+                        <td class="text-muted" th:text="${o.id}"></td>
+                        <td>
+                            <span th:if="${o.status == 'FILLED'}" class="tag tag-filled">FILLED</span>
+                            <span th:if="${o.status == 'PENDING'}" class="tag tag-pending">PENDING</span>
+                            <span th:if="${o.status == 'CANCELED'}" class="tag tag-canceled">CANCELED</span>
+                            <span th:if="${o.status == null}" class="tag tag-filled">FILLED</span>
+                        </td>
+                        <td>
+                            <span th:if="${o.orderType == 'BUY'}" class="tag tag-buy">BUY</span>
+                            <span th:if="${o.orderType == 'SELL'}" class="tag tag-sell">SELL</span>
+                        </td>
+                        <td class="symbol" th:text="${o.symbol}"></td>
+                        <td class="text-right mono" th:text="${#numbers.formatInteger(o.quantity, 1, 'COMMA')}"></td>
+                        <td class="text-right mono" th:text="'$' + ${#numbers.formatDecimal(o.price, 1, 2)}"></td>
+                        <td class="text-right mono" th:text="'$' + ${#numbers.formatDecimal(o.price * o.quantity, 1, 2)}"></td>
+                        <td class="text-muted" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" th:text="${o.notes}" th:title="${o.notes}"></td>
+                        <td class="text-right text-muted" th:text="${o.createdAt}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Risk Metrics + Audit Trail side by side -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <!-- Risk Metrics Panel -->
+            <div class="card">
+                <div class="card-header"><h2>Portfolio Risk</h2></div>
+                <div class="card-body" id="riskPanel">
+                    <div class="risk-grid">
+                        <div class="risk-stat"><div class="rv" id="riskBeta">—</div><div class="rl">Portfolio Beta</div></div>
+                        <div class="risk-stat"><div class="rv" id="riskHHI">—</div><div class="rl">HHI Index</div></div>
+                        <div class="risk-stat"><div class="rv" id="riskConc" style="font-size:16px;">—</div><div class="rl">Concentration</div></div>
+                    </div>
+                    <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-secondary);margin-bottom:8px;font-weight:600;">Sector Exposure</div>
+                    <div id="sectorBars"></div>
+                </div>
+            </div>
+
+            <!-- Audit Trail Panel -->
+            <div class="card">
+                <div class="card-header"><h2>Audit Trail</h2></div>
+                <div class="card-body" id="auditPanel" style="max-height:320px;overflow-y:auto;">
+                    <div style="color:var(--text-secondary);text-align:center;padding:24px;font-size:12px;">Loading audit data...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Multi-tier: UI calls REST API for live data -->
+    <script th:inline="javascript">
+        const profile = /*[[${activeProfile}]]*/ 'JSMITH';
+        const palette = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f97316','#6366f1'];
+        let allocChart = null, barChart = null;
+
+        function fmt(n) { return n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+        async function refreshPortfolio() {
+            try {
+                const res = await fetch('/api/portfolio/' + profile + '/holdings');
+                const data = await res.json();
+                const positions = data.positions || [];
+                const summary = data.summary || {};
+                const labels = [], mvArr = [];
+
+                // Update summary cards
+                document.getElementById('totalValue').textContent = '$' + fmt(summary.totalMarketValue || 0);
+                if (positions.length > 0) {
+                    let best = positions[0];
+                    positions.forEach(p => { if (p.pnlPercent > best.pnlPercent) best = p; });
+                    document.getElementById('largestPosition').textContent = best.symbol;
+                    document.getElementById('largestSub').textContent = (best.pnlPercent >= 0 ? '+' : '') + best.pnlPercent.toFixed(2) + '%';
+                }
+
+                // Update holdings table rows (match by data-symbol)
+                const rows = document.querySelectorAll('#holdingsTable tbody tr');
+                rows.forEach(row => {
+                    const sym = row.dataset.symbol;
+                    const pos = positions.find(p => p.symbol === sym);
+                    if (!pos) return;
+                    const cells = row.querySelectorAll('td');
+                    cells[3].textContent = '$' + fmt(pos.marketPrice);  // Mkt Price
+                    cells[4].textContent = '$' + fmt(pos.marketValue);  // Mkt Value
+                    // P&L
+                    cells[6].textContent = (pos.pnl >= 0 ? '+$' : '-$') + fmt(Math.abs(pos.pnl));
+                    cells[6].className = 'text-right mono ' + (pos.pnl >= 0 ? 'pnl-pos' : 'pnl-neg');
+                    cells[7].textContent = (pos.pnlPercent >= 0 ? '+' : '') + pos.pnlPercent.toFixed(2) + '%';
+                    cells[7].className = 'text-right mono ' + (pos.pnl >= 0 ? 'pnl-pos' : 'pnl-neg');
+                    cells[8].textContent = pos.weight.toFixed(1) + '%';
+                    labels.push(pos.symbol);
+                    mvArr.push(pos.marketValue);
+                });
+
+                // Allocation donut chart
+                if (labels.length > 0) {
+                    if (!allocChart) {
+                        allocChart = new Chart(document.getElementById('allocationChart'), {
+                            type: 'doughnut',
+                            data: { labels, datasets: [{ data: mvArr, backgroundColor: palette.slice(0, labels.length), borderColor: '#1a2235', borderWidth: 2 }] },
+                            options: { responsive: true, maintainAspectRatio: false, cutout: '65%',
+                                plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 12 }, padding: 12, usePointStyle: true, pointStyleWidth: 10 } },
+                                tooltip: { callbacks: { label: ctx => ctx.label + ': $' + fmt(ctx.parsed) } } } }
+                        });
+                    } else {
+                        allocChart.data.labels = labels;
+                        allocChart.data.datasets[0].data = mvArr;
+                        allocChart.update('none');
+                    }
+                }
+
+                // Position bar chart
+                if (labels.length > 0) {
+                    if (!barChart) {
+                        barChart = new Chart(document.getElementById('positionChart'), {
+                            type: 'bar',
+                            data: { labels, datasets: [{ label: 'Market Value ($)', data: mvArr, backgroundColor: palette.slice(0, labels.length), borderRadius: 6, borderSkipped: false }] },
+                            options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+                                scales: { x: { ticks: { color: '#94a3b8', callback: v => '$' + (v/1000).toFixed(0) + 'k' }, grid: { color: 'rgba(42,53,72,0.5)' } }, y: { ticks: { color: '#e2e8f0', font: { weight: 700 } }, grid: { display: false } } },
+                                plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => '$' + fmt(ctx.parsed.x) } } } }
+                        });
+                    } else {
+                        barChart.data.labels = labels;
+                        barChart.data.datasets[0].data = mvArr;
+                        barChart.update('none');
+                    }
+                }
+
+            } catch (e) { console.warn('API poll failed:', e); }
+        }
+
+        // Blotter filter
+        function filterOrders(status) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === status));
+            document.querySelectorAll('#blotterTable tbody tr').forEach(row => {
+                row.style.display = (status === 'ALL' || row.dataset.status === status) ? '' : 'none';
+            });
+        }
+
+        // Risk metrics
+        const sectorColors = {'Technology':'#3b82f6','Financials':'#f59e0b','Consumer Discretionary':'#ef4444','Healthcare':'#10b981','Consumer Staples':'#8b5cf6','Energy':'#f97316','Communication Services':'#ec4899','Industrials':'#06b6d4','Other':'#6b7280'};
+        async function loadRiskMetrics() {
+            try {
+                const res = await fetch('/api/portfolio/' + profile + '/risk');
+                const risk = await res.json();
+                document.getElementById('riskBeta').textContent = risk.portfolioBeta || '—';
+                document.getElementById('riskHHI').textContent = risk.herfindahlIndex || '—';
+                const conc = risk.concentrationRisk || '—';
+                const concEl = document.getElementById('riskConc');
+                concEl.textContent = conc;
+                concEl.style.color = conc === 'HIGH' ? '#ef4444' : conc === 'MODERATE' ? '#f59e0b' : '#10b981';
+
+                const bars = document.getElementById('sectorBars');
+                bars.innerHTML = '';
+                const sectors = risk.sectorExposure || {};
+                Object.entries(sectors).sort((a,b) => b[1]-a[1]).forEach(([name, pct]) => {
+                    const color = sectorColors[name] || '#6b7280';
+                    bars.innerHTML += '<div class="sector-bar"><span class="sb-name">' + name + '</span><div class="sb-fill"><div class="sb-fill-inner" style="width:' + pct + '%;background:' + color + '"></div></div><span class="sb-pct">' + pct + '%</span></div>';
+                });
+            } catch (e) { console.warn('Risk metrics failed:', e); }
+        }
+
+        // Audit trail
+        async function loadAuditTrail() {
+            try {
+                const res = await fetch('/api/audit/' + profile);
+                const entries = await res.json();
+                const panel = document.getElementById('auditPanel');
+                if (entries.length === 0) { panel.innerHTML = '<div style="color:var(--text-secondary);text-align:center;padding:24px;font-size:12px;">No audit entries</div>'; return; }
+                panel.innerHTML = entries.slice(0, 20).map(e => {
+                    const color = e.action === 'BUY' ? 'var(--accent-green)' : e.action === 'SELL' ? 'var(--accent-red)' : 'var(--accent-blue)';
+                    const time = e.createdAt ? new Date(e.createdAt).toLocaleString() : '';
+                    return '<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(42,53,72,0.4);font-size:12px;"><div style="width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0;background:' + color + '"></div><div><span style="font-weight:700">' + e.action + '</span> ' + (e.details || '') + '<div style="font-size:10px;color:var(--text-secondary)">' + time + '</div></div></div>';
+                }).join('');
+            } catch (e) { console.warn('Audit trail failed:', e); }
+        }
+
+        // WebSocket price streaming (upgrade from polling)
+        let wsConnected = false;
+        function connectWebSocket() {
+            try {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js';
+                script.onload = function() {
+                    const script2 = document.createElement('script');
+                    script2.src = 'https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js';
+                    script2.onload = function() {
+                        const socket = new SockJS('/ws');
+                        const stompClient = Stomp.over(socket);
+                        stompClient.debug = null; // silence logs
+                        stompClient.connect({}, function() {
+                            wsConnected = true;
+                            console.log('WebSocket connected');
+                            stompClient.subscribe('/topic/prices', function(msg) {
+                                // Update prices from WebSocket push
+                                refreshPortfolio();
+                            });
+                        }, function() {
+                            wsConnected = false;
+                            console.warn('WebSocket disconnected, falling back to polling');
+                        });
+                    };
+                    document.head.appendChild(script2);
+                };
+                document.head.appendChild(script);
+            } catch (e) { console.warn('WebSocket setup failed:', e); }
+        }
+
+        // Initial load
+        refreshPortfolio();
+        loadRiskMetrics();
+        loadAuditTrail();
+        connectWebSocket();
+
+        // Fallback polling (reduced frequency when WebSocket is active)
+        setInterval(function() {
+            if (!wsConnected) refreshPortfolio();
+        }, 5000);
+        // Refresh risk + audit less frequently
+        setInterval(loadRiskMetrics, 15000);
+        setInterval(loadAuditTrail, 10000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Java / Swing client build output
+swing-client/out/
+*.class
+
+# Maven backend build output
+backend/target/
+
+# SQL Server JDBC native auth DLL (download per backend/README; do not commit binaries)
+**/lib/*.dll
+**/mssql-jdbc_auth-*.dll
+
+# Editor / OS
+.idea/
+.vs/
+.vscode/
+*.iml
+Thumbs.db
+.DS_Store
+
+# Agent local notes (not for publishing)
+.claude/
+*.local.md

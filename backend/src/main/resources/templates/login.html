@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinanApp | Sign In</title>
+    <style>
+        :root {
+            --bg-primary: #0a0e17; --bg-secondary: #111827; --bg-card: #1a2235;
+            --border: #2a3548; --text-primary: #e2e8f0; --text-secondary: #94a3b8;
+            --accent-blue: #3b82f6; --accent-green: #10b981;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', -apple-system, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+        .login-container { text-align: center; }
+        .logo { font-size: 36px; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
+        .logo span { color: var(--accent-blue); }
+        .subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 48px; }
+
+        .prompt { font-size: 18px; font-weight: 600; margin-bottom: 24px; }
+
+        .profiles { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; }
+
+        .profile-card {
+            background: var(--bg-card); border: 2px solid var(--border); border-radius: 16px;
+            padding: 32px 40px; width: 260px; cursor: pointer; transition: all 0.2s;
+            text-decoration: none; color: var(--text-primary); display: flex; flex-direction: column; align-items: center;
+        }
+        .profile-card:hover { border-color: var(--accent-blue); transform: translateY(-4px); box-shadow: 0 8px 24px rgba(59,130,246,0.15); }
+
+        .avatar {
+            width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 16px;
+        }
+        .avatar-js { background: linear-gradient(135deg, #3b82f6, #8b5cf6); }
+        .avatar-mw { background: linear-gradient(135deg, #10b981, #06b6d4); }
+
+        .profile-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+        .profile-role { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; }
+        .profile-style { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 4px 12px; border-radius: 20px; font-weight: 600; }
+        .style-aggressive { background: rgba(239,68,68,0.15); color: #ef4444; }
+        .style-conservative { background: rgba(16,185,129,0.15); color: #10b981; }
+
+        .footer { margin-top: 48px; color: var(--text-secondary); font-size: 12px; }
+        .footer span { color: var(--accent-blue); }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">Finan<span>App</span></div>
+        <div class="subtitle">Institutional Trading Platform</div>
+
+        <div class="prompt">Select Trader Profile</div>
+
+        <div class="profiles">
+            <a th:each="p : ${profiles}" th:href="'/profile/' + ${p[0]}" class="profile-card">
+                <div th:classappend="${p[0] == 'JSMITH'} ? 'avatar avatar-js' : 'avatar avatar-mw'"
+                     th:text="${#strings.substring(p[1],0,1) + #strings.substring(p[1],#strings.indexOf(p[1],' ')+1,#strings.indexOf(p[1],' ')+2)}"></div>
+                <div class="profile-name" th:text="${p[1]}"></div>
+                <div class="profile-role">Portfolio Manager</div>
+                <div th:classappend="${p[0] == 'JSMITH'} ? 'profile-style style-aggressive' : 'profile-style style-conservative'"
+                     th:text="${p[2]}"></div>
+            </a>
+        </div>
+
+        <div class="footer">SQL Server &bull; Windows Integrated Security &bull; <span>finanapp</span></div>
+    </div>
+</body>
+</html>

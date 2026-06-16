@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinanApp | Trade</title>
+    <style>
+        :root {
+            --bg-primary: #0a0e17; --bg-secondary: #111827; --bg-card: #1a2235;
+            --border: #2a3548; --text-primary: #e2e8f0; --text-secondary: #94a3b8;
+            --accent-blue: #3b82f6; --accent-green: #10b981; --accent-red: #ef4444;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', -apple-system, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+
+        .topbar { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 0 32px; height: 56px; display: flex; align-items: center; gap: 24px; }
+        .topbar .logo { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+        .topbar .logo span { color: var(--accent-blue); }
+        .topbar .ticker-strip { display: flex; gap: 24px; margin-left: 32px; font-size: 13px; color: var(--text-secondary); }
+        .topbar .ticker-strip .up { color: var(--accent-green); }
+        .topbar .ticker-strip .down { color: var(--accent-red); }
+        .topbar nav { margin-left: auto; display: flex; gap: 4px; }
+        .topbar nav a { color: var(--text-secondary); text-decoration: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.15s; }
+        .topbar nav a:hover, .topbar nav a.active { color: var(--text-primary); background: var(--bg-card); }
+        .user-badge { display: flex; align-items: center; gap: 10px; margin-right: 20px; padding: 4px 12px 4px 4px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px; }
+        .user-badge .profile-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0; }
+        .user-badge .user-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+        .user-badge .user-role { font-size: 10px; color: var(--text-secondary); }
+        .av-js { background: linear-gradient(135deg, #3b82f6, #8b5cf6); }
+        .av-mw { background: linear-gradient(135deg, #10b981, #06b6d4); }
+
+        .trade-page { display: flex; justify-content: center; align-items: flex-start; padding: 48px 32px; gap: 32px; flex-wrap: wrap; }
+
+        /* Order Ticket */
+        .ticket { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; width: 440px; overflow: hidden; }
+        .ticket-header { padding: 24px 28px 0; }
+        .ticket-header h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+        .ticket-header p { font-size: 13px; color: var(--text-secondary); }
+
+        /* Side Toggle */
+        .side-toggle { display: flex; margin: 20px 28px 0; background: var(--bg-primary); border-radius: 8px; padding: 3px; }
+        .side-btn { flex: 1; padding: 10px; text-align: center; border: none; background: none; color: var(--text-secondary); font-size: 14px; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px; }
+        .side-btn.active-buy { background: var(--accent-green); color: #fff; box-shadow: 0 2px 8px rgba(16,185,129,0.3); }
+        .side-btn.active-sell { background: var(--accent-red); color: #fff; box-shadow: 0 2px 8px rgba(239,68,68,0.3); }
+        .side-btn:hover:not(.active-buy):not(.active-sell) { color: var(--text-primary); }
+
+        .ticket-body { padding: 24px 28px 28px; }
+        .field { margin-bottom: 20px; }
+        .field label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 500; }
+        .field input { width: 100%; padding: 12px 14px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 16px; font-family: 'Cascadia Code', 'Fira Code', monospace; transition: border 0.15s; outline: none; }
+        .field input:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+        .field input::placeholder { color: #475569; }
+        .field .error-msg { color: var(--accent-red); font-size: 12px; margin-top: 4px; }
+
+        .summary-line { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; color: var(--text-secondary); border-top: 1px solid var(--border); }
+        .summary-line .val { color: var(--text-primary); font-weight: 600; font-family: 'Cascadia Code', monospace; }
+
+        .submit-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px; margin-top: 16px; }
+        .submit-btn.buy { background: var(--accent-green); color: #fff; }
+        .submit-btn.buy:hover { background: #059669; box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
+        .submit-btn.sell { background: var(--accent-red); color: #fff; }
+        .submit-btn.sell:hover { background: #dc2626; box-shadow: 0 4px 12px rgba(239,68,68,0.3); }
+
+        /* Market Info Panel */
+        .market-panel { width: 320px; }
+        .info-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+        .info-card h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 12px; }
+        .info-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
+        .info-row .lbl { color: var(--text-secondary); }
+        .info-row .val { font-family: 'Cascadia Code', monospace; }
+
+        .alert-error { background: rgba(239,68,68,0.1); border: 1px solid var(--accent-red); color: var(--accent-red); padding: 12px 16px; border-radius: 8px; margin: 0 28px 16px; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="logo">Finan<span>App</span></div>
+        <div class="ticker-strip">
+            <span>S&amp;P 500 <span class="up">5,842.31 +0.62%</span></span>
+            <span>NASDAQ <span class="up">18,439.17 +0.94%</span></span>
+            <span>DOW <span class="down">42,801.72 -0.11%</span></span>
+        </div>
+        <nav>
+            <a href="/portfolio">Portfolio</a>
+            <a href="/trade" class="active">Trade</a>
+            <div class="user-badge">
+                <div th:classappend="${activeProfile == 'JSMITH'} ? 'profile-avatar av-js' : 'profile-avatar av-mw'"
+                     th:text="${activeProfileInitials}"></div>
+                <div>
+                    <div class="user-name" th:text="${activeProfileName}"></div>
+                    <div class="user-role" th:text="${activeProfileStyle}"></div>
+                </div>
+            </div>
+            <a href="/login" style="color: var(--accent-red); opacity: 0.7; font-size: 12px;">Sign Out</a>
+        </nav>
+    </div>
+
+    <div class="trade-page">
+        <div class="ticket">
+            <div class="ticket-header">
+                <h2>Order Ticket</h2>
+                <p>Execute a buy or sell order</p>
+            </div>
+
+            <div class="side-toggle">
+                <button type="button" class="side-btn active-buy" id="btnBuy" onclick="setSide('buy')">BUY</button>
+                <button type="button" class="side-btn" id="btnSell" onclick="setSide('sell')">SELL</button>
+            </div>
+
+            <div th:if="${error}" class="alert-error" style="margin-top: 16px;" th:text="${error}"></div>
+
+            <form id="tradeForm" th:object="${tradeForm}" method="post" action="/trade/buy" role="form" aria-label="Stock trade order form">
+                <div class="ticket-body">
+                    <div class="field">
+                        <label for="symbol">Symbol</label>
+                        <input type="text" id="symbol" th:field="*{symbol}" placeholder="AAPL" maxlength="10" autocomplete="off" oninput="this.value=this.value.toUpperCase();updateSummary()" aria-label="Stock symbol" aria-required="true" />
+                        <div class="error-msg" th:if="${#fields.hasErrors('symbol')}" th:errors="*{symbol}"></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="field">
+                            <label for="quantity">Shares</label>
+                            <input type="number" id="quantity" th:field="*{quantity}" min="1" placeholder="100" oninput="updateSummary()" aria-label="Number of shares" aria-required="true" />
+                            <div class="error-msg" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></div>
+                        </div>
+                        <div class="field">
+                            <label for="price">Price ($)</label>
+                            <input type="number" id="price" th:field="*{price}" step="0.01" min="0.01" placeholder="150.00" oninput="updateSummary()" aria-label="Price per share" aria-required="true" />
+                            <div class="error-msg" th:if="${#fields.hasErrors('price')}" th:errors="*{price}"></div>
+                        </div>
+                    </div>
+
+                    <div class="summary-line"><span>Estimated Total</span><span class="val" id="estTotal">$0.00</span></div>
+                    <div class="summary-line"><span>Order Type</span><span class="val" id="sideLabel">Market Buy</span></div>
+
+                    <button type="submit" class="submit-btn buy" id="submitBtn" formmethod="post">Place Buy Order</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Market Info -->
+        <div class="market-panel">
+            <div class="info-card">
+                <h3>Quick Reference</h3>
+                <div class="info-row"><span class="lbl">AAPL</span><span class="val">$227.48</span></div>
+                <div class="info-row"><span class="lbl">MSFT</span><span class="val">$415.20</span></div>
+                <div class="info-row"><span class="lbl">GOOGL</span><span class="val">$174.65</span></div>
+                <div class="info-row"><span class="lbl">AMZN</span><span class="val">$201.33</span></div>
+                <div class="info-row"><span class="lbl">NVDA</span><span class="val">$138.07</span></div>
+                <div class="info-row"><span class="lbl">TSLA</span><span class="val">$248.71</span></div>
+            </div>
+            <div class="info-card">
+                <h3>Keyboard Shortcuts</h3>
+                <div style="font-size: 12px; color: var(--text-secondary); line-height: 2;">
+                    <kbd style="background:#2a3548;padding:2px 6px;border-radius:3px;font-size:11px;">Ctrl+B</kbd> Buy mode<br>
+                    <kbd style="background:#2a3548;padding:2px 6px;border-radius:3px;font-size:11px;">Ctrl+S</kbd> Sell mode<br>
+                    <kbd style="background:#2a3548;padding:2px 6px;border-radius:3px;font-size:11px;">Ctrl+Enter</kbd> Submit<br>
+                    <kbd style="background:#2a3548;padding:2px 6px;border-radius:3px;font-size:11px;">Esc</kbd> Clear form<br>
+                    <kbd style="background:#2a3548;padding:2px 6px;border-radius:3px;font-size:11px;">Ctrl+P</kbd> Portfolio
+                </div>
+            </div>
+            <div class="info-card">
+                <h3>Order Rules</h3>
+                <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.7;">
+                    Symbol: 1-10 characters<br>
+                    Quantity: minimum 1 share<br>
+                    Price: minimum $0.01<br>
+                    Sell: cannot exceed held shares
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSide = 'buy';
+
+        function setSide(side) {
+            currentSide = side;
+            const btnBuy = document.getElementById('btnBuy');
+            const btnSell = document.getElementById('btnSell');
+            const submitBtn = document.getElementById('submitBtn');
+
+            btnBuy.className = side === 'buy' ? 'side-btn active-buy' : 'side-btn';
+            btnSell.className = side === 'sell' ? 'side-btn active-sell' : 'side-btn';
+
+            if (side === 'buy') {
+                submitBtn.className = 'submit-btn buy';
+                submitBtn.textContent = 'Place Buy Order';
+                submitBtn.closest('form').setAttribute('formaction', '/trade/buy');
+                document.getElementById('sideLabel').textContent = 'Market Buy';
+            } else {
+                submitBtn.className = 'submit-btn sell';
+                submitBtn.textContent = 'Place Sell Order';
+                submitBtn.closest('form').setAttribute('formaction', '/trade/sell');
+                document.getElementById('sideLabel').textContent = 'Market Sell';
+            }
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const qty = parseFloat(document.getElementById('quantity').value) || 0;
+            const price = parseFloat(document.getElementById('price').value) || 0;
+            const total = qty * price;
+            document.getElementById('estTotal').textContent = '$' + total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+
+        // Set form action on submit
+        document.getElementById('tradeForm').addEventListener('submit', function(e) {
+            this.action = currentSide === 'buy' ? '/trade/buy' : '/trade/sell';
+        });
+
+        // Init
+        setSide('buy');
+
+        // Keyboard shortcuts (Feature 5: trader keyboard workflows)
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+B = switch to BUY
+            if (e.ctrlKey && e.key === 'b') { e.preventDefault(); setSide('buy'); document.getElementById('symbol').focus(); }
+            // Ctrl+S = switch to SELL (prevent browser save)
+            if (e.ctrlKey && e.key === 's') { e.preventDefault(); setSide('sell'); document.getElementById('symbol').focus(); }
+            // Ctrl+Enter = submit order
+            if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); document.getElementById('tradeForm').requestSubmit(); }
+            // Escape = clear form
+            if (e.key === 'Escape') { document.getElementById('symbol').value = ''; document.getElementById('quantity').value = ''; document.getElementById('price').value = ''; updateSummary(); document.getElementById('symbol').focus(); }
+            // Ctrl+P = go to portfolio
+            if (e.ctrlKey && e.key === 'p') { e.preventDefault(); window.location = '/portfolio'; }
+        });
+    </script>
+</body>
+</html>
